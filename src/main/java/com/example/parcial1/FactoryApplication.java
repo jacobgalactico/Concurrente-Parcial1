@@ -24,12 +24,16 @@ public class FactoryApplication {
 		// Crear una lista de estaciones de trabajo para el scheduler
 		List<EstacionDeTrabajo> estaciones = Arrays.asList(estacion1, estacion2, estacion3);
 
-		// Crear y ejecutar scheduler
+		// Crear y ejecutar el scheduler
 		Scheduler scheduler = new Scheduler(estaciones);
 		new Thread(scheduler::startProduction).start(); // Ejecutar el scheduler en un nuevo hilo
 
-		// Crear línea de ensamblaje
-		LineaDeEnsamblaje lineaDeEnsamblaje = new LineaDeEnsamblaje(buffer);
+		// Iniciar la visualización de la distribución de componentes con JavaFX
+		VisualizacionDistribucion visualizacion = new VisualizacionDistribucion(10, 100);
+		VisualizacionDistribucion.iniciarVisualizacion(args); // Iniciar JavaFX
+
+		// Crear línea de ensamblaje con visualización
+		LineaDeEnsamblaje lineaDeEnsamblaje = new LineaDeEnsamblaje(buffer, visualizacion);
 		lineaDeEnsamblaje.start(); // Iniciar la línea de ensamblaje en un hilo separado
 	}
 }

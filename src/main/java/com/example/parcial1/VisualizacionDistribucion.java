@@ -1,63 +1,81 @@
 package com.example.parcial1;
 
-import javax.swing.*;
-import java.awt.*;
+import javafx.application.Application;
+import javafx.application.Platform;
+import javafx.scene.Scene;
+import javafx.scene.canvas.Canvas;
+import javafx.scene.canvas.GraphicsContext;
+import javafx.scene.layout.StackPane;
+import javafx.scene.paint.Color;
+import javafx.stage.Stage;
+
 import java.util.Random;
 
-public class VisualizacionDistribucion extends JPanel {
-    private int[] contenedores;
-    private int numeroDeBolas;
+public class VisualizacionDistribucion extends Application {
 
-    public VisualizacionDistribucion(int numeroDeContenedores, int numeroDeBolas) {
-        this.contenedores = new int[numeroDeContenedores];
-        this.numeroDeBolas = numeroDeBolas;
+    private static final int WIDTH = 600;
+    private static final int HEIGHT = 400;
+    private static int[] contenedores;
+    private static int numeroDeBolas;
+
+    private Canvas canvas;
+
+    public VisualizacionDistribucion() {
+        // Constructor vacío requerido por JavaFX
     }
 
-    public void agregarBola() {
+    public VisualizacionDistribucion(int numeroDeContenedores, int numeroDeBolas) {
+        contenedores = new int[numeroDeContenedores];
+        VisualizacionDistribucion.numeroDeBolas = numeroDeBolas;
+    }
+
+    @Override
+    public void start(Stage primaryStage) {
+        primaryStage.setTitle("Distribución Normal en Tiempo Real");
+        StackPane root = new StackPane();
+        canvas = new Canvas(WIDTH, HEIGHT);  // Crear el Canvas para dibujar
+        root.getChildren().add(canvas);
+        Scene scene = new Scene(root, WIDTH, HEIGHT);
+        primaryStage.setScene(scene);
+        primaryStage.show();
+    }
+
+    // Método para agregar una bola (o componente) al contenedor correspondiente
+    public synchronized void agregarComponente() {
         Random random = new Random();
         int posicion = 0;
 
-        // Simula la caída de la bola a través del tablero de Galton
+        // Simula la caída de un componente por el tablero de Galton
         for (int i = 0; i < contenedores.length - 1; i++) {
             if (random.nextBoolean()) {
                 posicion++;
             }
         }
 
-        // Incrementa el contenedor donde cayó la bola
+        // Incrementa el contenedor donde "cayó" el componente
         contenedores[posicion]++;
-        repaint();
+
+        // Asegura que la actualización de la interfaz gráfica ocurra en el hilo de JavaFX
+        Platform.runLater(this::actualizarVisualizacion);
     }
 
-    @Override
-    protected void paintComponent(Graphics g) {
-        super.paintComponent(g);
+    // Método para actualizar la visualización gráfica en tiempo real
+    private void actualizarVisualizacion() {
+        if (canvas == null) return;  // Asegurarse de que el canvas no sea nulo
 
-        // Dibuja los contenedores
-        int width = getWidth() / contenedores.length;
+        GraphicsContext gc = canvas.getGraphicsContext2D();
+        gc.clearRect(0, 0, WIDTH, HEIGHT); // Limpiar el canvas
+
+        int width = WIDTH / contenedores.length;
         for (int i = 0; i < contenedores.length; i++) {
-            int height = contenedores[i] * 10; // Escalar el número de bolas
-            g.fillRect(i * width, getHeight() - height, width - 2, height);
+            int height = contenedores[i] * 10; // Escalar el número de componentes
+            gc.setFill(Color.BLUE);
+            gc.fillRect(i * width, HEIGHT - height, width - 2, height); // Dibujar el rectángulo
         }
     }
 
-    public static void main(String[] args) {
-        JFrame frame = new JFrame("Visualización Distribución Normal");
-        VisualizacionDistribucion panel = new VisualizacionDistribucion(10, 100);
-
-        frame.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        frame.setSize(400, 400);
-        frame.add(panel);
-        frame.setVisible(true);
-
-        // Simular la caída de bolas
-        for (int i = 0; i < 100; i++) {
-            panel.agregarBola();
-            try {
-                Thread.sleep(100); // Simula el tiempo entre caídas de bolas
-            } catch (InterruptedException e) {
-                e.printStackTrace();
-            }
-        }
+    // Método para iniciar la visualización en JavaFX
+    public static void iniciarVisualizacion(String[] args) {
+        launch(args); // Llama al método "start" de JavaFX
     }
 }
