@@ -1,0 +1,27 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Galton Board</title>
+</head>
+<body>
+<h1>Galton Board Simulation</h1>
+<pre id="boardState">Esperando la simulación...</pre>
+
+<script>
+    // Establecemos una conexión WebSocket
+    let socket = new WebSocket("ws://localhost:8080/galton");
+
+    // Manejador para recibir mensajes
+    socket.onmessage = function(event) {
+        document.getElementById("boardState").innerText = event.data;
+    };
+
+    // Simula el inicio cuando el socket se abre
+    socket.onopen = function() {
+        socket.send("start"); // Envía un mensaje para iniciar la simulación
+    };
+</script>
+</body>
+</html>
