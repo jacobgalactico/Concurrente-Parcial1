@@ -6,6 +6,7 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.BlockingQueue;
+import java.util.concurrent.CountDownLatch;
 
 @SpringBootApplication
 public class FactoryApplication {
@@ -13,7 +14,8 @@ public class FactoryApplication {
 	public static void main(String[] args) {
 		SpringApplication.run(FactoryApplication.class, args);
 
-		BufferCompartido bufferCompartido = new BufferCompartido(10); // Buffer con capacidad 10
+		// Crear buffer compartido con capacidad de 10 componentes
+		BufferCompartido bufferCompartido = new BufferCompartido(10);
 		BlockingQueue<Componente> buffer = bufferCompartido.getBuffer();
 
 		// Crear estaciones de trabajo
@@ -21,19 +23,31 @@ public class FactoryApplication {
 		EstacionDeTrabajo estacion2 = new EstacionDeTrabajo("Estación 2", buffer, 5);
 		EstacionDeTrabajo estacion3 = new EstacionDeTrabajo("Estación 3", buffer, 5);
 
-		// Crear una lista de estaciones de trabajo para el scheduler
+		// Lista de estaciones para el scheduler
 		List<EstacionDeTrabajo> estaciones = Arrays.asList(estacion1, estacion2, estacion3);
 
-		// Crear y ejecutar el scheduler
-		Scheduler scheduler = new Scheduler(estaciones);
-		new Thread(scheduler::startProduction).start(); // Ejecutar el scheduler en un nuevo hilo
+		// Crear un CountDownLatch para sincronizar la inicialización de JavaFX
+		CountDownLatch latch = new CountDownLatch(1);
 
-		// Iniciar la visualización de la distribución de componentes con JavaFX
+		// Crear la instancia de VisualizacionDistribucion con los parámetros correctos
 		VisualizacionDistribucion visualizacion = new VisualizacionDistribucion(10, 100);
-		VisualizacionDistribucion.iniciarVisualizacion(args); // Iniciar JavaFX
 
-		// Crear línea de ensamblaje con visualización
+		// Iniciar JavaFX en un hilo separado, asegurándonos de que los contenedores están inicializados correctamente
+		new Thread(() -> VisualizacionDistribucion.iniciarVisualizacion(new String[] {}, latch)).start();
+
+		try {
+			// Esperar a que JavaFX se inicialice completamente
+			latch.await();
+		} catch (InterruptedException e) {
+			e.printStackTrace();
+		}
+
+		// Crear línea de ensamblaje con visualización (después de que JavaFX esté listo)
 		LineaDeEnsamblaje lineaDeEnsamblaje = new LineaDeEnsamblaje(buffer, visualizacion);
-		lineaDeEnsamblaje.start(); // Iniciar la línea de ensamblaje en un hilo separado
+		lineaDeEnsamblaje.start(); // Iniciar línea de ensamblaje en otro hilo
+
+		// Crear y ejecutar el scheduler en un hilo separado
+		Scheduler scheduler = new Scheduler(estaciones);
+		new Thread(scheduler::startProduction).start();
 	}
 }
